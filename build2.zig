@@ -86,15 +86,7 @@ fn addTest(b: *Builder, exe: *std.build.LibExeObjStep, target: std.zig.CrossTarg
     test_step.dependOn(&run_cmd.step);
 }
 
-fn addZigupExe(
-    b: *Builder,
-    ziget_repo: *GitRepoStep,
-    target: std.zig.CrossTarget,
-    mode: std.builtin.Mode,
-    zigup_build_options: *std.build.OptionsStep,
-    optional_win32exelink: ?*std.build.LibExeObjStep,
-    ssl_backend: ?SslBackend
-) !*std.build.LibExeObjStep {
+fn addZigupExe(b: *Builder, ziget_repo: *GitRepoStep, target: std.zig.CrossTarget, mode: std.builtin.Mode, zigup_build_options: *std.build.OptionsStep, optional_win32exelink: ?*std.build.LibExeObjStep, ssl_backend: ?SslBackend) !*std.build.LibExeObjStep {
     const require_ssl_backend = b.allocator.create(RequireSslBackendStep) catch unreachable;
     require_ssl_backend.* = RequireSslBackendStep.init(b, "the zigup exe", ssl_backend);
 
@@ -118,9 +110,9 @@ fn addZigupExe(
         });
         exe.step.dependOn(&zarc_repo.step);
         const zarc_repo_path = zarc_repo.getPath(&exe.step);
-        exe.addPackage(Pkg {
+        exe.addPackage(Pkg{
             .name = "zarc",
-            .source = .{ .path = try join(b, &[_][]const u8 { zarc_repo_path, "src", "main.zig" }) },
+            .source = .{ .path = try join(b, &[_][]const u8{ zarc_repo_path, "src", "main.zig" }) },
         });
     }
 
@@ -147,7 +139,7 @@ const SslBackendFailedStep = struct {
     }
     fn make(step: *std.build.Step) !void {
         const self = @fieldParentPtr(RequireSslBackendStep, "step", step);
-        std.debug.print("error: the {s} failed to add the {s} SSL backend\n", .{self.context, self.backend});
+        std.debug.print("error: the {s} failed to add the {s} SSL backend\n", .{ self.context, self.backend });
         std.os.exit(1);
     }
 };
@@ -165,7 +157,7 @@ const RequireSslBackendStep = struct {
     }
     fn make(step: *std.build.Step) !void {
         const self = @fieldParentPtr(RequireSslBackendStep, "step", step);
-        if (self.backend) |_| { } else {
+        if (self.backend) |_| {} else {
             std.debug.print("error: {s} requires an SSL backend:\n", .{self.context});
             inline for (zigetbuild.ssl_backends) |field| {
                 std.debug.print("    -D{s}\n", .{field.name});
@@ -176,14 +168,13 @@ const RequireSslBackendStep = struct {
 };
 
 fn addGithubReleaseExe(b: *Builder, github_release_step: *std.build.Step, ziget_repo: []const u8, comptime target_triple: []const u8, comptime ssl_backend: SslBackend) !void {
-
     const small_release = true;
 
     const target = try std.zig.CrossTarget.parse(.{ .arch_os_abi = target_triple });
     const mode = if (small_release) .ReleaseSafe else .Debug;
     const exe = try addZigupExe(b, ziget_repo, target, mode, ssl_backend);
     if (small_release) {
-       exe.strip = true;
+        exe.strip = true;
     }
     exe.setOutputDir("github-release" ++ std.fs.path.sep_str ++ target_triple ++ std.fs.path.sep_str ++ @tagName(ssl_backend));
     github_release_step.dependOn(&exe.step);
@@ -194,7 +185,10 @@ fn join(b: *Builder, parts: []const []const u8) ![]const u8 {
 }
 
 const ci_target_map = std.ComptimeStringMap([]const u8, .{
-    .{ "ubuntu-latest", "x86_64-linux" },
-    .{ "macos-latest", "x86_64-macos" },
-    .{ "windows-latest", "x86_64-windows" },
+    .{ "ubuntu-latest-x86_64", "x86_64-linux" },
+    .{ "macos-latest-x86_64", "x86_64-macos" },
+    .{ "windows-latest-x86_64", "x86_64-windows" },
+    .{ "ubuntu-latest-aarch64", "aarch64-linux" },
+    .{ "macos-latest-aarch64", "aarch64-macos" },
+    .{ "windows-latest-aarch64", "aarch64-windows" },
 });
