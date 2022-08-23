@@ -14,7 +14,9 @@ jobs:
         with:
           version: 0.10.0-dev.3027+0e26c6149
       - run: |
-          zig build test -Dfetch -Dci_target=${{matrix.os}}-${{matrix.arch}}
+          zig build test -Dfetch -Dci_target=${{matrix.os}}-x86_64
+      - run: |
+          zig build -Dfetch -Dci_target=${{matrix.os}}-${{matrix.arch}}
         shell: bash
       - uses: actions/upload-artifact@v2
         with:
